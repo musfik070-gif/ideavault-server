@@ -38,7 +38,6 @@ async function run() {
     const usersCollection = database.collection("users");
 
     // REGISTER API
-
     app.post("/register", async (req, res) => {
       try {
         const { name, email, password, photo } = req.body;

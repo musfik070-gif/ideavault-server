@@ -37,8 +37,8 @@ async function run() {
 
     const usersCollection = database.collection("users");
 
-      // REGISTER API
-      
+    // REGISTER API
+
     app.post("/register", async (req, res) => {
       try {
         const { name, email, password, photo } = req.body;
@@ -83,6 +83,53 @@ async function run() {
           success: true,
           token,
           result,
+        });
+      } catch (error) {
+        res.status(500).send({
+          message: error.message,
+        });
+      }
+    });
+
+    // LOGIN API
+
+    app.post("/login", async (req, res) => {
+      try {
+        const { email, password } = req.body;
+
+        // CHECK USER
+
+        const user = await usersCollection.findOne({ email });
+
+        if (!user) {
+          return res.status(404).send({
+            message: "User not found",
+          });
+        }
+
+        // PASSWORD MATCH
+
+        const isPasswordMatched = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordMatched) {
+          return res.status(401).send({
+            message: "Invalid password",
+          });
+        }
+
+        // GENERATE JWT
+
+        const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
+          expiresIn: "7d",
+        });
+
+        const userCopy = { ...user };
+        delete userCopy.password;
+
+        res.send({
+          success: true,
+          token,
+          user: userCopy,
         });
       } catch (error) {
         res.status(500).send({

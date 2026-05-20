@@ -36,6 +36,7 @@ async function run() {
     const database = client.db("ideaVaultDB");
 
     const usersCollection = database.collection("users");
+    const ideasCollection = database.collection("ideas");
 
     // REGISTER API
 
@@ -101,6 +102,12 @@ async function run() {
 
         const user = await usersCollection.findOne({ email });
 
+        if (user) {
+          const safeUser = { ...user };
+          if (safeUser.password) safeUser.password = "***";
+          console.log("Found User:", safeUser);
+        }
+
         if (!user) {
           return res.status(404).send({
             message: "User not found",
@@ -131,6 +138,22 @@ async function run() {
           token,
           user: userCopy,
         });
+      } catch (error) {
+        res.status(500).send({
+          message: error.message,
+        });
+      }
+    });
+
+    // IDEAS API
+
+    app.post("/ideas", async (req, res) => {
+      try {
+        const newIdea = req.body;
+        newIdea.createdAt = new Date();
+
+        const result = await ideasCollection.insertOne(newIdea);
+        res.send(result);
       } catch (error) {
         res.status(500).send({
           message: error.message,

@@ -177,8 +177,21 @@ async function run() {
 
     app.get("/ideas", async (req, res) => {
       try {
+        const search = req.query.search || "";
+        const filter = req.query.filter || "";
+
+        let query = {};
+
+        if (search) {
+          query.title = { $regex: search, $options: "i" };
+        }
+
+        if (filter) {
+          query.category = filter;
+        }
+
         const result = await ideasCollection
-          .find()
+          .find(query)
           .sort({ createdAt: -1 })
           .toArray();
 

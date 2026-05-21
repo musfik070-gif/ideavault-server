@@ -161,6 +161,34 @@ async function run() {
       }
     });
 
+    app.get("/my-ideas", async (req, res) => {
+      try {
+        const email = req.query.email;
+        const query = { userEmail: email };
+        const result = await ideasCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: error.message,
+        });
+      }
+    });
+
+    app.get("/ideas", async (req, res) => {
+      try {
+        const result = await ideasCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to fetch ideas",
+        });
+      }
+    });
+
     // ROOT ROUTE
 
     app.get("/", (req, res) => {

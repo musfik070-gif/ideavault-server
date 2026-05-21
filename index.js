@@ -163,6 +163,17 @@ async function run() {
       }
     });
 
+    // CHECK USER EXISTS API
+    app.get("/users/check/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const user = await usersCollection.findOne({ email });
+        res.send({ exists: !!user });
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
+    });
+
     // GOOGLE LOGIN API
 
     app.post("/google-login", async (req, res) => {
@@ -171,13 +182,10 @@ async function run() {
         let user = await usersCollection.findOne({ email });
 
         if (!user) {
-          user = {
-            name,
-            email,
-            photo,
-            createdAt: new Date(),
-          };
-          await usersCollection.insertOne(user);
+          return res.status(404).send({
+            success: false,
+            message: "Account not found. Please register first."
+          });
         }
 
         const token = jwt.sign({ email }, process.env.JWT_SECRET, {

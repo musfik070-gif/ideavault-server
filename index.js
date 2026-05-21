@@ -11,7 +11,10 @@ const app = express();
 
 const port = process.env.PORT || 5001;
 
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "https://ideavault-client-one.vercel.app"],
+  credentials: true
+}));
 app.use(express.json());
 
 // MONGODB CLIENT
@@ -535,9 +538,7 @@ async function run() {
 
     // ROOT ROUTE
 
-    app.get("/", (req, res) => {
-      res.send("IdeaVault Server Running");
-    });
+    app.get("/", (req, res) => res.send("IdeaVolt Server is running"));
   } catch (error) {
     console.log(error);
   }
@@ -547,6 +548,10 @@ run();
 
 // SERVER
 
-app.listen(port, () => {
-  console.log(`Server running on ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on ${port}`);
+  });
+}
+
+module.exports = app;

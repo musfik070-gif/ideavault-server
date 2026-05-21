@@ -37,6 +37,7 @@ async function run() {
 
     const usersCollection = database.collection("users");
     const ideasCollection = database.collection("ideas");
+    const interactionsCollection = database.collection("interactions");
 
     // REGISTER API
 
@@ -214,6 +215,20 @@ async function run() {
       } catch (error) {
         res.status(500).send({
           message: "Failed to fetch idea",
+        });
+      }
+    });
+
+    app.post("/interested", async (req, res) => {
+      try {
+        const interactionData = req.body;
+        interactionData.createdAt = new Date();
+
+        const result = await interactionsCollection.insertOne(interactionData);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to save interaction",
         });
       }
     });

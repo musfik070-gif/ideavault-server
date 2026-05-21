@@ -27,21 +27,18 @@ const client = new MongoClient(process.env.MONGO_URI, {
   },
 });
 
-async function run() {
-  try {
-    // CONNECT DATABASE
+// CONNECT DATABASE
+client.connect()
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
 
-    await client.connect();
-    console.log("MongoDB Connected");
+// DATABASE
+const database = client.db("ideaVaultDB");
 
-    // DATABASE
-
-    const database = client.db("ideaVaultDB");
-
-    const usersCollection = database.collection("users");
-    const ideasCollection = database.collection("ideas");
-    const interactionsCollection = database.collection("interactions");
-    const commentsCollection = database.collection("comments");
+const usersCollection = database.collection("users");
+const ideasCollection = database.collection("ideas");
+const interactionsCollection = database.collection("interactions");
+const commentsCollection = database.collection("comments");
 
     // JWT VERIFICATION MIDDLEWARE
 
@@ -539,12 +536,6 @@ async function run() {
     // ROOT ROUTE
 
     app.get("/", (req, res) => res.send("IdeaVolt Server is running"));
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-run();
 
 // SERVER
 

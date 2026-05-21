@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 require("dotenv").config();
 
@@ -185,6 +185,35 @@ async function run() {
       } catch (error) {
         res.status(500).send({
           message: "Failed to fetch ideas",
+        });
+      }
+    });
+
+    app.get("/trending-ideas", async (req, res) => {
+      try {
+        const result = await ideasCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to fetch trending ideas",
+        });
+      }
+    });
+
+    app.get("/ideas/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await ideasCollection.findOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to fetch idea",
         });
       }
     });

@@ -27,11 +27,6 @@ const client = new MongoClient(process.env.MONGO_URI, {
   },
 });
 
-// CONNECT DATABASE
-client.connect()
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
-
 // DATABASE
 const database = client.db("ideaVaultDB");
 
@@ -39,6 +34,47 @@ const usersCollection = database.collection("users");
 const ideasCollection = database.collection("ideas");
 const interactionsCollection = database.collection("interactions");
 const commentsCollection = database.collection("comments");
+
+// Database connection promise caching for serverless environments (Vercel)
+let clientPromise = null;
+
+const connectDB = async () => {
+  const isConnected = client.topology && typeof client.topology.isConnected === "function" && client.topology.isConnected();
+  if (isConnected && clientPromise) {
+    return clientPromise;
+  }
+  
+  console.log("MongoDB not connected or topology closed. Connecting...");
+  clientPromise = client.connect()
+    .then((conn) => {
+      console.log("MongoDB Connected successfully");
+      return conn;
+    })
+    .catch((err) => {
+      console.error("MongoDB Connection failed:", err);
+      clientPromise = null;
+      throw err;
+    });
+    
+  return clientPromise;
+};
+
+// Global DB Connection middleware
+app.use(async (req, res, next) => {
+  if (req.path === "/") {
+    return next();
+  }
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error);
+    res.status(500).send({
+      message: "Database connection failed",
+      error: error.message
+    });
+  }
+});
 
     // JWT VERIFICATION MIDDLEWARE
 

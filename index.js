@@ -6,6 +6,9 @@ require("dotenv").config();
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 
@@ -211,37 +214,38 @@ app.use(async (req, res, next) => {
     });
 
     // GOOGLE LOGIN API
-
-    app.post("/google-login", async (req, res) => {
+    app.post("/auth/google-login", async (req, res) => {
       try {
-        const { name, email, photo } = req.body;
-        let user = await usersCollection.findOne({ email });
+        const { credential } = req.body;
 
+        // Verify Google token
+        const ticket = await googleClient.verifyIdToken({
+          idToken: credential,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const email = payload.email;
+
+        // Check if user exists in database
+        const user = await usersCollection.findOne({ email });
         if (!user) {
-          return res.status(404).send({
-            success: false,
-            message: "Account not found. Please register first."
-          });
+          return res.status(404).json({ message: "User not found. Please register first." });
         }
 
-        const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-          expiresIn: "7d",
-        });
+        // Generate JWT same way as email/password login
+        const token = jwt.sign(
+          { email: user.email, id: user._id },
+          process.env.JWT_SECRET,
+          { expiresIn: "7d" }
+        );
 
-        res.send({
-          success: true,
-          token,
-          user: {
-            name: user.name,
-            email: user.email,
-            photo: user.photo,
-            _id: user._id,
-          },
-        });
+        const userCopy = { ...user };
+        delete userCopy.password;
+
+        res.json({ token, user: userCopy });
       } catch (error) {
-        res.status(500).send({
-          message: error.message,
-        });
+        console.error("Google token verification failed:", error);
+        res.status(401).json({ message: "Invalid Google token." });
       }
     });
 

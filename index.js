@@ -227,9 +227,23 @@ app.use(async (req, res, next) => {
         const email = payload.email;
 
         // Check if user exists in database
-        const user = await usersCollection.findOne({ email });
+        let user = await usersCollection.findOne({ email });
         if (!user) {
-          return res.status(404).json({ message: "User not found. Please register first." });
+          const name = payload.name || email.split("@")[0];
+          const photo = payload.picture || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150";
+
+          const newUser = {
+            name,
+            email,
+            photo,
+            createdAt: new Date(),
+          };
+
+          const result = await usersCollection.insertOne(newUser);
+          user = {
+            _id: result.insertedId,
+            ...newUser
+          };
         }
 
         // Generate JWT same way as email/password login
